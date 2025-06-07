@@ -6,10 +6,18 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "dotenv>=0.9.9",
+    "fastapi[all]>=0.115.12",
     "ipykernel>=6.29.5",
     "langchain>=0.3.25",
     "langchain-openai>=0.3.18",
     "langgraph>=0.4.5",
+    "langgraph-checkpoint-redis>=0.0.6",
+    "langgraph-prebuilt>=0.2.0",
+    "logging>=0.4.9.6",
     "marimo>=0.13.11",
     "pip>=25.1.1",
+    "pydantic-settings>=2.9.1",
+    "redis>=6.2.0",
+    "uuid>=1.30",
+    "uuid-v7>=1.0.0",
 ]
