@@ -3,3 +3,5 @@
 __marimo__
 
 *.txt
+
+__pycache__

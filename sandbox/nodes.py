@@ -8,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def interview_step(state: AgentState) -> dict:
+def interview_step(state: AgentState) -> AgentState:
     """
     1) Read state.language, state.description and state.user_input
     2) Call the LLM
@@ -28,16 +28,16 @@ def interview_step(state: AgentState) -> dict:
         model=settings.OPENAI_MODEL,
         temperature=0.0
     )
-    ai_msg = llm.chat([system])
+    ai_msg = llm.invoke([system])
     reply = ai_msg.content
 
     # mutate the Pydantic model
-    state.model_responses.append(ai_msg)
-    state.history.append(reply)
+    state.model_response = ai_msg.content
+    state.response_history.append(reply)
 
     logger.info(f"[interview_step] LLM replied: {reply!r}")
 
     # return a mapping of updated fields
-    return {"state": state}
+    return state
 
 

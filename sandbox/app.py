@@ -4,7 +4,7 @@ import contextlib
 from fastapi import FastAPI
 from .agent_ws import router as agent_ws_router
 from .config import settings
-from .graph import init_graph, shutdown_graph
+from .graph import init_graph
 
 # Configure logging once, at module import time
 logging.basicConfig(
@@ -21,8 +21,6 @@ async def lifespan(app: FastAPI):
     await init_graph()
     yield
     logger.info("Application shutting down…")
-    # clean up RedisSaver
-    await shutdown_graph()
 
 # 3) Single FastAPI app
 app = FastAPI(

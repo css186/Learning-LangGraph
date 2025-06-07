@@ -12,7 +12,7 @@ from .schemas import (
     EndMessage,
     AgentState
 )
-from .graph import interview_agent
+import sandbox.graph as graph
 
 
 logger = logging.getLogger(__name__)
@@ -41,102 +41,94 @@ async def agent_ws(websocket: WebSocket):
             if title == "ping":
                 await websocket.send_json({"title": "pong"})
                 continue
-            
-            # --- Global variables check ---
-            if not state or not thread_id:
-                await websocket.send_json({"error": "Must start interview first"})
-                continue
+        
 
             # --- Start Interview ---
             if title == "start interview":
                 try:
-                    message = StartMessage.parse_obj(raw)
+                    message = StartMessage.model_validate(raw)
                 except ValidationError:
                     await websocket.send_json({"error": "Invalid start message"})
                     continue
-                
                 thread_id = str(uuid.uuid4())
 
                 # initial AgentState
                 init = {
                     "thread_id": thread_id,
-                    "description": message.get("description", ""),
-                    "language": message.get("language", ""),
+                    "description": message.description,
+                    "language": message.language,
                 }
                 state = AgentState(**init)
 
                 # Run graph agent
-                state = await interview_agent(
+                response = await graph.interview_agent.ainvoke(
                     state,
                     config={"configurable": {"thread_id": thread_id}}
                 )
 
                 await websocket.send_json({
                     "title": "start interview response",
-                    "text": state.history[-1] if state.history else "",
+                    "text": response["model_response"],
                     "thread_id": thread_id
                 })
 
                 continue
 
+            # --- thread_id and state check ---
+            if not state or not thread_id:
+                await websocket.send_json({"error": "Must start interview first"})
+                continue
+
             # --- Question Update --- 
             if title == "question":
                 try:
-                    message = QuestionMessage.parse_obj(raw)
+                    message = QuestionMessage.model_validate(raw)
                 except ValidationError:
                     await websocket.send_json({"error": "Invalid question message"})
                     continue
 
-                if message.id != thread_id:
-                    await websocket.send_json({"error": "ID mismatch"})
-                    continue
-
-
                 state.user_input   = message.speech
                 state.current_code = message.code
+                state.thread_id = thread_id
 
                 # run the graph (load + merge + run + save)
-                state = await interview_agent(
+                response = await graph.interview_agent.ainvoke(
                     state,
                     config={"configurable": {"thread_id": thread_id}}
                 )
 
                 await websocket.send_json({
                     "title": "question response",
-                    "text": state.history[-1] if state.history else ""
+                    "text": response["model_response"]
                 })
                 continue
 
             # --- Submission Result ---
             if title == "submission result":
                 try:
-                    message = QuestionMessage.parse_obj(raw)
+                    message = SubmissionMessage.model_validate(raw)
                 except ValidationError:
                     await websocket.send_json({"error": "Invalid question message"})
-                    continue
-
-                if message.id != thread_id:
-                    await websocket.send_json({"error": "ID mismatch"})
                     continue
 
                 state.status = message.status
 
                                 # run the graph (load + merge + run + save)
-                state = await interview_agent(
+                response = await graph.interview_agent.ainovke(
                     state,
                     config={"configurable": {"thread_id": thread_id}}
                 )
 
                 await websocket.send_json({
                     "title": "question response",
-                    "text": state.history[-1] if state.history else ""
+                    "text": response["model_response"]
                 })
                 continue
             
                         # --- Stop Interview ---
             if title == "stop interview":
                 try:
-                    message = StopMessage.parse_obj(raw)
+                    message = EndMessage.model_validate(raw)
                 except ValidationError:
                     await websocket.send_json({"error": "Invalid stop message"})
                     continue
@@ -145,14 +137,14 @@ async def agent_ws(websocket: WebSocket):
                     await websocket.send_json({"error": "ID mismatch"})
                     continue
 
-                state = await interview_agent(
+                response = await graph.interview_agent.ainvoke(
                     state,
                     config={"configurable": {"thread_id": thread_id}}
                 )
 
                 await websocket.send_json({
                     "title": "evaluation response",
-                    "text": state.history[-1] if state.history else ""
+                    "text": response["model_response"]
                 })
                 continue
 

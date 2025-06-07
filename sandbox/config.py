@@ -9,10 +9,14 @@ class Settings(BaseSettings):
     # OpenAI API key
     OPENAI_API_KEY: str = Field(default="some_default_key")
 
+    # OpenAI model
+    OPENAI_MODEL: str = Field(default="gpt-4o")
+    
     # Redis connection
     REDIS_HOST: str = Field(default="localhost")
     REDIS_PORT: int = Field(default=6379)
     REDIS_DB: int = Field(default=0)
+    REDIS_URL: str = Field(default="redis://localhost:6379/0")
 
     # Application settings
     APP_HOST: str = Field(default="0.0.0.0")

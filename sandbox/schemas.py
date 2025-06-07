@@ -46,7 +46,7 @@ class AgentState(BaseModel):
     current_code: Optional[str] = None
     description: Optional[str] = None
     language: Optional[str] = None
-    response_history: Optional[List[BaseMessage]] = Field(default_factory=list)
+    response_history: List[Union[str, BaseMessage]] = []
 
     class Config:
         extra = "ignore"
